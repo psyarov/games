@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codenames - Family Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .team-info {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .team {
+            text-align: center;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            min-width: 120px;
+        }
+
+        .team.red {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .team.blue {
+            background: #4ecdc4;
+            color: white;
+        }
+
+        .current-turn {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            border: 3px solid;
+        }
+
+        .current-turn.red {
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+
+        .current-turn.blue {
+            border-color: #4ecdc4;
+            color: #4ecdc4;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .role-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .role-btn {
+            padding: 8px 16px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .role-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .role-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .card {
+            aspect-ratio: 1.5;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            background: white;
+            color: #333;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .card:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .card.revealed {
+            transform: scale(0.95);
+            cursor: not-allowed;
+        }
+
+        .card.red {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+        }
+
+        .card.blue {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+
+        .card.neutral {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            color: #666;
+        }
+
+        .card.assassin {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+        }
+
+        .card.spymaster-view.red {
+            border: 4px solid #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .card.spymaster-view.blue {
+            border: 4px solid #4ecdc4;
+            background: rgba(78, 205, 196, 0.1);
+        }
+
+        .card.spymaster-view.neutral {
+            border: 4px solid #95a5a6;
+            background: rgba(149, 165, 166, 0.1);
+        }
+
+        .card.spymaster-view.assassin {
+            border: 4px solid #2c3e50;
+            background: rgba(44, 62, 80, 0.1);
+        }
+
+        .action-panel {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .clue-input {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .clue-input input {
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .clue-input input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .current-clue {
+            font-size: 1.2rem;
+            margin: 10px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+        }
+
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .game-over-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .game-over h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .instructions {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .instructions h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .game-info {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .team-info {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .controls {
+                justify-content: center;
+            }
+
+            .grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🕵️ CODENAMES 🕵️</h1>
+            <p>Family Edition - Play Together from Anywhere!</p>
+        </div>
+
+        <div class="instructions">
+            <h3>How to Play:</h3>
+            <p><strong>Setup:</strong> Choose your role (Spymaster or Agent) and team (Red/Blue). Spymasters can see which words belong to their team.</p>
+            <p><strong>Gameplay:</strong> Spymasters give one-word clues + number of related words. Agents guess. Avoid the assassin!</p>
+            <p><strong>Winning:</strong> First team to find all their agents wins. Hit the assassin and you lose!</p>
+        </div>
+
+        <div class="game-info">
+            <div class="team-info">
+                <div class="team red">
+                    <div>🔴 RED TEAM</div>
+                    <div id="redCount">9 agents left</div>
+                </div>
+                <div class="team blue">
+                    <div>🔵 BLUE TEAM</div>
+                    <div id="blueCount">8 agents left</div>
+                </div>
+            </div>
+            
+            <div class="current-turn red" id="currentTurn">
+                Red Team's Turn
+            </div>
+
+            <div class="controls">
+                <div class="role-selector">
+                    <label>Your Role:</label>
+                    <button class="role-btn" id="agentBtn" onclick="setRole('agent')">Agent</button>
+                    <button class="role-btn active" id="spymasterBtn" onclick="setRole('spymaster')">Spymaster</button>
+                </div>
+                <button class="btn btn-secondary" onclick="newGame()">New Game</button>
+            </div>
+        </div>
+
+        <div class="grid" id="gameGrid"></div>
+
+        <div class="action-panel">
+            <div id="spymasterPanel">
+                <div class="clue-input">
+                    <input type="text" id="clueWord" placeholder="Enter clue word" maxlength="20">
+                    <input type="number" id="clueNumber" placeholder="#" min="1" max="9" style="width: 80px;">
+                    <button class="btn btn-primary" onclick="giveClue()">Give Clue</button>
+                </div>
+            </div>
+            
+            <div id="currentClueDisplay"></div>
+            
+            <div id="agentPanel">
+                <p>Click on words to make your guess. Click "End Turn" when done.</p>
+                <button class="btn btn-secondary" onclick="endTurn()" id="endTurnBtn" style="display: none;">End Turn</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="gameOverModal" class="game-over" style="display: none;">
+        <div class="game-over-content">
+            <h2 id="gameOverTitle">Game Over!</h2>
+            <p id="gameOverMessage"></p>
+            <button class="btn btn-primary" onclick="newGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let gameState = {
+            words: [],
+            colors: [],
+            revealed: new Array(25).fill(false),
+            currentTeam: 'red',
+            currentClue: null,
+            guessesLeft: 0,
+            redCount: 9,
+            blueCount: 8,
+            gameOver: false,
+            playerRole: 'spymaster'
+        };
+
+        // Word list for the game
+        const WORD_LIST = [
+            'AGENT', 'ALIEN', 'ANGEL', 'APPLE', 'ARTIST', 'BANK', 'BEACH', 'BELL', 'BIRD', 'BLOCK',
+            'BOARD', 'BOND', 'BOOM', 'BOX', 'BRIDGE', 'BRUSH', 'CAKE', 'CAMERA', 'CARD', 'CAR',
+            'CASTLE', 'CAT', 'CHAIR', 'CHANGE', 'CIRCLE', 'CLOUD', 'CLUB', 'COOK', 'CROSS', 'CUP',
+            'DOG', 'DOOR', 'DRAGON', 'DREAM', 'DUCK', 'EYE', 'FACE', 'FAIR', 'FALL', 'FAN',
+            'FIRE', 'FISH', 'FOOT', 'FOREST', 'FORK', 'GAME', 'GHOST', 'GIANT', 'GLASS', 'GOLD',
+            'GREEN', 'GROUND', 'HAM', 'HAND', 'HEART', 'HILL', 'HOLE', 'HOOK', 'HORSE', 'HOUSE',
+            'ICE', 'IRON', 'JACK', 'KING', 'KNIFE', 'LAKE', 'LEAF', 'LIGHT', 'LOCK', 'LOVE',
+            'MOON', 'MOUNTAIN', 'MOUSE', 'NIGHT', 'ORANGE', 'PAPER', 'PARK', 'PEN', 'PHONE', 'PIANO',
+            'PLANT', 'POINT', 'POOL', 'QUEEN', 'RING', 'RIVER', 'ROCK', 'ROOM', 'ROSE', 'SCHOOL',
+            'SHIP', 'SHOE', 'SHOP', 'SKY', 'SNOW', 'SONG', 'SPACE', 'STAR', 'STONE', 'SUN',
+            'TABLE', 'TEMPLE', 'TIME', 'TOWER', 'TRAIN', 'TREE', 'WALL', 'WATER', 'WAVE', 'WIND'
+        ];
+
+        function initGame() {
+            // Select 25 random words
+            const shuffledWords = [...WORD_LIST].sort(() => Math.random() - 0.5);
+            gameState.words = shuffledWords.slice(0, 25);
+            
+            // Assign colors: 9 red, 8 blue, 7 neutral, 1 assassin
+            gameState.colors = [
+                ...new Array(9).fill('red'),
+                ...new Array(8).fill('blue'),
+                ...new Array(7).fill('neutral'),
+                'assassin'
+            ].sort(() => Math.random() - 0.5);
+            
+            gameState.revealed = new Array(25).fill(false);
+            gameState.currentTeam = 'red';
+            gameState.currentClue = null;
+            gameState.guessesLeft = 0;
+            gameState.redCount = 9;
+            gameState.blueCount = 8;
+            gameState.gameOver = false;
+            
+            renderGame();
+            updateGameInfo();
+        }
+
+        function renderGame() {
+            const grid = document.getElementById('gameGrid');
+            grid.innerHTML = '';
+            
+            for (let i = 0; i < 25; i++) {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.textContent = gameState.words[i];
+                card.onclick = () => selectCard(i);
+                
+                if (gameState.revealed[i]) {
+                    card.classList.add('revealed', gameState.colors[i]);
+                } else if (gameState.playerRole === 'spymaster') {
+                    card.classList.add('spymaster-view', gameState.colors[i]);
+                }
+                
+                grid.appendChild(card);
+            }
+        }
+
+        function selectCard(index) {
+            if (gameState.revealed[index] || gameState.gameOver) return;
+            if (gameState.currentClue === null) {
+                alert('Spymaster must give a clue first!');
+                return;
+            }
+            
+            gameState.revealed[index] = true;
+            const color = gameState.colors[index];
+            
+            if (color === 'assassin') {
+                endGame(`${gameState.currentTeam === 'red' ? 'Blue' : 'Red'} team wins!`, 'The assassin was revealed!');
+                return;
+            }
+            
+            if (color === gameState.currentTeam) {
+                if (color === 'red') gameState.redCount--;
+                else gameState.blueCount--;
+                
+                gameState.guessesLeft--;
+                
+                if (gameState.redCount === 0) {
+                    endGame('Red team wins!', 'All red agents found!');
+                    return;
+                }
+                if (gameState.blueCount === 0) {
+                    endGame('Blue team wins!', 'All blue agents found!');
+                    return;
+                }
+                
+                if (gameState.guessesLeft === 0) {
+                    endTurn();
+                }
+            } else {
+                if (color === 'red') gameState.redCount--;
+                else if (color === 'blue') gameState.blueCount--;
+                
+                endTurn();
+            }
+            
+            renderGame();
+            updateGameInfo();
+        }
+
+        function giveClue() {
+            const clueWord = document.getElementById('clueWord').value.trim().toUpperCase();
+            const clueNumber = parseInt(document.getElementById('clueNumber').value);
+            
+            if (!clueWord || !clueNumber || clueNumber < 1) {
+                alert('Please enter a valid clue word and number!');
+                return;
+            }
+            
+            gameState.currentClue = { word: clueWord, number: clueNumber };
+            gameState.guessesLeft = clueNumber + 1; // +1 for bonus guess
+            
+            document.getElementById('clueWord').value = '';
+            document.getElementById('clueNumber').value = '';
+            document.getElementById('endTurnBtn').style.display = 'block';
+            
+            updateClueDisplay();
+        }
+
+        function updateClueDisplay() {
+            const display = document.getElementById('currentClueDisplay');
+            if (gameState.currentClue) {
+                display.innerHTML = `
+                    <div class="current-clue">
+                        Current Clue: <strong>${gameState.currentClue.word} ${gameState.currentClue.number}</strong>
+                        <br>Guesses remaining: <strong>${gameState.guessesLeft}</strong>
+                    </div>
+                `;
+            } else {
+                display.innerHTML = '';
+            }
+        }
+
+        function endTurn() {
+            gameState.currentTeam = gameState.currentTeam === 'red' ? 'blue' : 'red';
+            gameState.currentClue = null;
+            gameState.guessesLeft = 0;
+            document.getElementById('endTurnBtn').style.display = 'none';
+            updateGameInfo();
+            updateClueDisplay();
+        }
+
+        function updateGameInfo() {
+            document.getElementById('redCount').textContent = `${gameState.redCount} agents left`;
+            document.getElementById('blueCount').textContent = `${gameState.blueCount} agents left`;
+            
+            const turnElement = document.getElementById('currentTurn');
+            turnElement.textContent = `${gameState.currentTeam === 'red' ? 'Red' : 'Blue'} Team's Turn`;
+            turnElement.className = `current-turn ${gameState.currentTeam}`;
+        }
+
+        function setRole(role) {
+            gameState.playerRole = role;
+            document.getElementById('agentBtn').classList.toggle('active', role === 'agent');
+            document.getElementById('spymasterBtn').classList.toggle('active', role === 'spymaster');
+            
+            const spymasterPanel = document.getElementById('spymasterPanel');
+            const agentPanel = document.getElementById('agentPanel');
+            
+            if (role === 'spymaster') {
+                spymasterPanel.style.display = 'block';
+                agentPanel.style.display = 'none';
+            } else {
+                spymasterPanel.style.display = 'none';
+                agentPanel.style.display = 'block';
+            }
+            
+            renderGame();
+        }
+
+        function endGame(title, message) {
+            gameState.gameOver = true;
+            document.getElementById('gameOverTitle').textContent = title;
+            document.getElementById('gameOverMessage').textContent = message;
+            document.getElementById('gameOverModal').style.display = 'flex';
+        }
+
+        function newGame() {
+            document.getElementById('gameOverModal').style.display = 'none';
+            initGame();
+        }
+
+        // Initialize the game when page loads
+        initGame();
+        setRole('spymaster'); // Default to spymaster view
+    </script>
+</body>
+</html>
